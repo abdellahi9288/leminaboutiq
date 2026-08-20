@@ -19,7 +19,7 @@ export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   return (
     <nav
       className="border-t flex justify-center items-center py-1.5 px-3 gap-1.5 shrink-0"
-      style={{ background: "var(--card)", borderColor: "var(--border-light)" }}
+      style={{ background: "var(--card)", borderColor: "var(--border-light)", paddingBottom: "calc(0.375rem + env(safe-area-inset-bottom, 0px))" }}
     >
       {tabs.map((tab) => {
         const isActive = activeTab === tab.key;
