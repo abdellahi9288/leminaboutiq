@@ -176,12 +176,12 @@ export default function DashboardPage() {
         activeTab={activeTab}
       />
 
-      {/* Add button — full width */}
-      <div className="px-3 md:px-8 py-1.5">
+      {/* Add button */}
+      <div className="px-3 md:px-8 py-1.5 shrink-0">
         <button
           onClick={() => setIsModalOpen(true)}
           className="btn btn-success w-100 d-flex align-items-center justify-content-center gap-2 font-tajawal font-bold"
-          style={{ padding: "8px 0", fontSize: "14px" }}
+          style={{ padding: "10px 0", fontSize: "15px" }}
         >
           <PlusIcon />
           {activeTab === "income" ? "إضافة دخل" : activeTab === "expenses" ? "إضافة مصروف" : "إضافة منتج"}
@@ -195,7 +195,7 @@ export default function DashboardPage() {
       />
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto pb-5">
+      <div className="flex-1 overflow-y-auto pb-3 pt-1">
         {loading ? (
           <div className="flex items-center justify-center py-24">
             <div
