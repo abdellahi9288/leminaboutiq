@@ -1,0 +1,42 @@
+"use client";
+
+import { IncomeIcon, ExpenseIcon, InventoryIcon } from "./Icons";
+
+type TabType = "income" | "expenses" | "inventory";
+
+interface BottomNavProps {
+  activeTab: TabType;
+  onTabChange: (tab: TabType) => void;
+}
+
+const tabs: { key: TabType; label: string; Icon: typeof IncomeIcon }[] = [
+  { key: "income", label: "الدخل", Icon: IncomeIcon },
+  { key: "expenses", label: "المصاريف", Icon: ExpenseIcon },
+  { key: "inventory", label: "المخزون", Icon: InventoryIcon },
+];
+
+export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
+  return (
+    <nav
+      className="border-t flex justify-center items-center py-2 px-5 gap-2"
+      style={{ background: "var(--card)", borderColor: "var(--border-light)" }}
+    >
+      {tabs.map((tab) => {
+        const isActive = activeTab === tab.key;
+        return (
+          <button
+            key={tab.key}
+            onClick={() => onTabChange(tab.key)}
+            className={`btn d-flex flex-column align-items-center gap-1 px-4 py-2 font-tajawal font-bold ${
+              isActive ? "btn-success" : "btn-light border-0"
+            }`}
+            style={!isActive ? { color: "var(--text-faint)" } : {}}
+          >
+            <tab.Icon active={isActive} />
+            <span className="text-[12px]">{tab.label}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+}

@@ -1,26 +1,158 @@
 @import "tailwindcss";
+@import "bootstrap/dist/css/bootstrap.min.css";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ── Mauritanian palette ── */
+  --sand:        #f4efe6;
+  --sand-dark:   #e9e0d1;
+  --cream:       #faf7f2;
+  --parchment:   #f0ead8;
+
+  --green-deep:  #14532d;
+  --green-brand: #166534;
+  --green-mid:   #15803d;
+  --green-light: #dcfce7;
+  --green-wash:  #f0fdf4;
+
+  --gold:        #b8860b;
+  --gold-light:  #f5ecd4;
+  --gold-wash:   #fdf8ef;
+
+  --text-ink:    #1c1410;
+  --text-body:   #3d322a;
+  --text-muted:  #8a7d70;
+  --text-faint:  #b5aa9c;
+
+  --border:      #ddd4c6;
+  --border-light:#ebe4d8;
+  --card:        #fffdf9;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--sand);
+  --color-foreground: var(--text-ink);
+  --font-cairo: var(--font-cairo);
+  --font-tajawal: var(--font-tajawal);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--sand);
+  color: var(--text-body);
+  font-family: var(--font-cairo), "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.75;
+}
+
+.font-cairo {
+  font-family: var(--font-cairo), "Segoe UI", sans-serif;
+}
+
+.font-tajawal {
+  font-family: var(--font-tajawal), "Segoe UI", sans-serif;
+}
+
+
+/* ── Tabular numerals for financial figures ── */
+.nums {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  direction: ltr;
+  unicode-bidi: bidi-override;
+  display: inline-block;
+}
+
+/* ── Bootstrap overrides ── */
+.btn-success {
+  --bs-btn-bg: var(--green-brand);
+  --bs-btn-border-color: var(--green-brand);
+  --bs-btn-hover-bg: var(--green-deep);
+  --bs-btn-hover-border-color: var(--green-deep);
+  --bs-btn-active-bg: var(--green-deep);
+  --bs-btn-active-border-color: var(--green-deep);
+}
+
+.btn-outline-success {
+  --bs-btn-color: var(--green-brand);
+  --bs-btn-border-color: var(--green-brand);
+  --bs-btn-hover-bg: var(--green-brand);
+  --bs-btn-hover-border-color: var(--green-brand);
+  --bs-btn-active-bg: var(--green-deep);
+  --bs-btn-active-border-color: var(--green-deep);
+}
+
+/* ── Animations ── */
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.6; }
+}
+@keyframes press {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+.animate-slide-up { animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+.animate-fade-up  { animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-scale-in { animation: scale-in 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+.animate-press    { animation: press 0.2s ease; }
+
+.stagger-1 { animation-delay: 80ms; }
+.stagger-2 { animation-delay: 160ms; }
+.stagger-3 { animation-delay: 240ms; }
+.stagger-4 { animation-delay: 320ms; }
+
+/* ── Micro-interaction: tab/button press ── */
+.btn-press {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+}
+.btn-press:active {
+  transform: scale(0.96);
+}
+
+/* ── Input reset ── */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+::selection {
+  background: var(--green-light);
+  color: var(--green-deep);
 }
