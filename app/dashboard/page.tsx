@@ -177,7 +177,7 @@ export default function DashboardPage() {
       />
 
       {/* Add button */}
-      <div className="px-3 md:px-8 py-1.5 shrink-0">
+      <div className="px-3 md:px-8 pt-3 pb-2 shrink-0">
         <button
           onClick={() => setIsModalOpen(true)}
           className="btn btn-success w-100 d-flex align-items-center justify-content-center gap-2 font-tajawal font-bold"

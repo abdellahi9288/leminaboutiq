@@ -106,7 +106,7 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
       style={{ background: "var(--card)", borderColor: "var(--border-light)" }}
     >
       {/* Mobile: burger + section title + store name */}
-      <div className="flex md:hidden items-center justify-between px-3 pt-2 pb-1.5">
+      <div className="flex md:hidden items-center justify-between px-4 pt-3 pb-3">
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className="btn btn-light border-0 p-1"
