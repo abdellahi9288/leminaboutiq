@@ -4,8 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogoutIcon, SettingsIcon, DownloadIcon } from "./Icons";
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: string }>;
+}
+
 declare global {
-  interface Window { __pwaPrompt: { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> } | null; }
+  interface Window { __pwaPrompt: BeforeInstallPromptEvent | null; }
 }
 
 type FilterType = "today" | "week" | "month" | "custom";
@@ -34,32 +39,29 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
   const [customTo, setCustomTo] = useState(todayStr);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const triggerInstall = async (evt: BeforeInstallPromptEvent) => {
+    await evt.prompt();
+    window.__pwaPrompt = null;
+  };
+
   const handleInstall = async () => {
-    // Try the stored prompt first
-    if (window.__pwaPrompt) {
-      await window.__pwaPrompt.prompt();
-      window.__pwaPrompt = null;
-      return;
-    }
-    // Wait briefly for the prompt to arrive (SW might still be registering)
-    const waited = await new Promise<boolean>((resolve) => {
+    const stored = window.__pwaPrompt;
+    if (stored) { await triggerInstall(stored); return; }
+
+    // Wait briefly for the prompt to arrive
+    await new Promise<void>((resolve) => {
       const onPrompt = (e: Event) => {
         e.preventDefault();
-        window.__pwaPrompt = e as typeof window.__pwaPrompt;
-        resolve(true);
+        window.__pwaPrompt = e as BeforeInstallPromptEvent;
+        resolve();
       };
       window.addEventListener("beforeinstallprompt", onPrompt);
-      setTimeout(() => {
-        window.removeEventListener("beforeinstallprompt", onPrompt);
-        resolve(false);
-      }, 3000);
+      setTimeout(() => { window.removeEventListener("beforeinstallprompt", onPrompt); resolve(); }, 3000);
     });
-    if (waited && window.__pwaPrompt) {
-      await window.__pwaPrompt.prompt();
-      window.__pwaPrompt = null;
-      return;
-    }
-    // Fallback: iOS doesn't support beforeinstallprompt
+
+    const delayed = window.__pwaPrompt;
+    if (delayed) { await triggerInstall(delayed); return; }
+
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     if (isIOS) {
       alert("لتثبيت التطبيق:\n\nاضغط على زر المشاركة ⬆️ في الأسفل\nثم اختر \"إضافة إلى الشاشة الرئيسية\"");
