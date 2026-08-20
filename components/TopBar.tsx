@@ -35,17 +35,36 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleInstall = async () => {
-    const prompt = window.__pwaPrompt;
-    if (prompt) {
-      await prompt.prompt();
+    // Try the stored prompt first
+    if (window.__pwaPrompt) {
+      await window.__pwaPrompt.prompt();
       window.__pwaPrompt = null;
+      return;
+    }
+    // Wait briefly for the prompt to arrive (SW might still be registering)
+    const waited = await new Promise<boolean>((resolve) => {
+      const onPrompt = (e: Event) => {
+        e.preventDefault();
+        window.__pwaPrompt = e as typeof window.__pwaPrompt;
+        resolve(true);
+      };
+      window.addEventListener("beforeinstallprompt", onPrompt);
+      setTimeout(() => {
+        window.removeEventListener("beforeinstallprompt", onPrompt);
+        resolve(false);
+      }, 3000);
+    });
+    if (waited && window.__pwaPrompt) {
+      await window.__pwaPrompt.prompt();
+      window.__pwaPrompt = null;
+      return;
+    }
+    // Fallback: iOS doesn't support beforeinstallprompt
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+      alert("لتثبيت التطبيق:\n\nاضغط على زر المشاركة ⬆️ في الأسفل\nثم اختر \"إضافة إلى الشاشة الرئيسية\"");
     } else {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      if (isIOS) {
-        alert("لتثبيت التطبيق:\n\nاضغط على زر المشاركة ⬆️ في الأسفل\nثم اختر \"إضافة إلى الشاشة الرئيسية\"");
-      } else {
-        alert("لتثبيت التطبيق:\n\nاضغط على ⋮ في أعلى المتصفح\nثم اختر \"تثبيت التطبيق\" أو \"إضافة إلى الشاشة الرئيسية\"");
-      }
+      alert("لتثبيت التطبيق:\n\nاضغط على ⋮ في أعلى المتصفح\nثم اختر \"إضافة إلى الشاشة الرئيسية\"");
     }
   };
 
