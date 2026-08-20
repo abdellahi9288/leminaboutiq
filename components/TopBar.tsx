@@ -93,11 +93,6 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
     URL.revokeObjectURL(url);
   };
 
-  const handleFilterChange = (key: FilterType) => {
-    onFilterChange(key);
-    if (key !== "custom") setMenuOpen(false);
-  };
-
   const sectionTitle = activeTab === "dashboard" ? "لوحة التحكم" : activeTab === "income" ? "الدخل" : activeTab === "expenses" ? "المصاريف" : "المخزون";
 
   return (
@@ -106,7 +101,7 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
       style={{ background: "var(--card)", borderColor: "var(--border-light)" }}
     >
       {/* Mobile: burger + section title + store name */}
-      <div className="flex md:hidden items-center justify-between px-4 pt-3 pb-3">
+      <div className="flex md:hidden items-center justify-between px-4 pt-3 pb-2">
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className="btn btn-light border-0 p-1"
@@ -122,7 +117,44 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
         </div>
       </div>
 
-      {/* Mobile menu overlay — rendered at top level with fixed positioning */}
+      {/* Mobile: filters row under top bar */}
+      <div className="flex md:hidden flex-wrap gap-2 px-4 pb-3">
+        {filters.map((f) => {
+          const isActive = activeFilter === f.key;
+          return (
+            <button
+              key={f.key}
+              onClick={() => onFilterChange(f.key)}
+              className={`btn btn-sm font-tajawal font-bold ${isActive ? "btn-success" : "btn-outline-secondary"}`}
+              style={{ fontSize: "12px", padding: "4px 12px" }}
+            >
+              {f.label}
+            </button>
+          );
+        })}
+      </div>
+      {activeFilter === "custom" && (
+        <div className="flex md:hidden items-center gap-3 px-4 pb-3 animate-fade-up">
+          <div className="flex items-center gap-1">
+            <label className="text-[11px] font-tajawal font-bold" style={{ color: "var(--text-muted)" }}>من</label>
+            <input
+              type="date" value={customFrom}
+              onChange={(e) => { setCustomFrom(e.target.value); onCustomDateChange?.(e.target.value, customTo); }}
+              className="btn btn-outline-secondary btn-sm" style={{ fontSize: "11px", padding: "2px 6px" }}
+            />
+          </div>
+          <div className="flex items-center gap-1">
+            <label className="text-[11px] font-tajawal font-bold" style={{ color: "var(--text-muted)" }}>إلى</label>
+            <input
+              type="date" value={customTo}
+              onChange={(e) => { setCustomTo(e.target.value); onCustomDateChange?.(customFrom, e.target.value); }}
+              className="btn btn-outline-secondary btn-sm" style={{ fontSize: "11px", padding: "2px 6px" }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Mobile menu overlay — burger menu (no filters, just actions) */}
       {menuOpen && (
         <div className="md:hidden">
           <div className="fixed inset-0" style={{ background: "rgba(0,0,0,0.25)", zIndex: 9998 }} onClick={() => setMenuOpen(false)} />
@@ -130,46 +162,6 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
             className="fixed rounded-xl border shadow-xl animate-fade-up"
             style={{ background: "var(--card)", borderColor: "var(--border-light)", zIndex: 9999, top: "48px", left: "12px", right: "12px" }}
           >
-            {/* Filters */}
-            <div className="px-4 py-3">
-              <p className="text-[11px] font-tajawal font-bold mb-2" style={{ color: "var(--text-faint)" }}>الفترة</p>
-              <div className="flex flex-wrap gap-2">
-                {filters.map((f) => {
-                  const isActive = activeFilter === f.key;
-                  return (
-                    <button
-                      key={f.key}
-                      onClick={() => handleFilterChange(f.key)}
-                      className={`btn btn-sm font-tajawal font-bold ${isActive ? "btn-success" : "btn-outline-secondary"}`}
-                      style={{ fontSize: "12px", padding: "4px 12px" }}
-                    >
-                      {f.label}
-                    </button>
-                  );
-                })}
-              </div>
-              {activeFilter === "custom" && (
-                <div className="flex items-center gap-3 mt-3">
-                  <div className="flex items-center gap-1">
-                    <label className="text-[11px] font-tajawal font-bold" style={{ color: "var(--text-muted)" }}>من</label>
-                    <input
-                      type="date" value={customFrom}
-                      onChange={(e) => { setCustomFrom(e.target.value); onCustomDateChange?.(e.target.value, customTo); }}
-                      className="btn btn-outline-secondary btn-sm" style={{ fontSize: "11px", padding: "2px 6px" }}
-                    />
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <label className="text-[11px] font-tajawal font-bold" style={{ color: "var(--text-muted)" }}>إلى</label>
-                    <input
-                      type="date" value={customTo}
-                      onChange={(e) => { setCustomTo(e.target.value); onCustomDateChange?.(customFrom, e.target.value); }}
-                      className="btn btn-outline-secondary btn-sm" style={{ fontSize: "11px", padding: "2px 6px" }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-            <div style={{ height: "1px", background: "var(--border-light)" }} />
             <button onClick={() => { setMenuOpen(false); handleInstall(); }} className="w-full d-flex align-items-center gap-2 px-4 py-3 text-[14px] font-tajawal font-bold border-0 bg-transparent" style={{ color: "var(--green-brand)" }}>
               <DownloadIcon /> تثبيت التطبيق
             </button>
