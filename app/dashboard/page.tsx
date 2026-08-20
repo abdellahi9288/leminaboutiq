@@ -177,11 +177,11 @@ export default function DashboardPage() {
       />
 
       {/* Add button — full width */}
-      <div className="px-4 md:px-8 py-2">
+      <div className="px-3 md:px-8 py-1.5">
         <button
           onClick={() => setIsModalOpen(true)}
           className="btn btn-success w-100 d-flex align-items-center justify-content-center gap-2 font-tajawal font-bold"
-          style={{ padding: "10px 0", fontSize: "15px" }}
+          style={{ padding: "8px 0", fontSize: "14px" }}
         >
           <PlusIcon />
           {activeTab === "income" ? "إضافة دخل" : activeTab === "expenses" ? "إضافة مصروف" : "إضافة منتج"}

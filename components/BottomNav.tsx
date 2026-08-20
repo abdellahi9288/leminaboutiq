@@ -18,7 +18,7 @@ const tabs: { key: TabType; label: string; Icon: typeof IncomeIcon }[] = [
 export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   return (
     <nav
-      className="border-t flex justify-center items-center py-2 px-5 gap-2"
+      className="border-t flex justify-center items-center py-1.5 px-3 gap-1.5 shrink-0"
       style={{ background: "var(--card)", borderColor: "var(--border-light)" }}
     >
       {tabs.map((tab) => {
@@ -27,13 +27,13 @@ export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
           <button
             key={tab.key}
             onClick={() => onTabChange(tab.key)}
-            className={`btn d-flex flex-column align-items-center gap-1 px-4 py-2 font-tajawal font-bold ${
+            className={`btn d-flex flex-column align-items-center gap-0.5 px-3 py-1.5 font-tajawal font-bold ${
               isActive ? "btn-success" : "btn-light border-0"
             }`}
             style={!isActive ? { color: "var(--text-faint)" } : {}}
           >
             <tab.Icon active={isActive} />
-            <span className="text-[12px]">{tab.label}</span>
+            <span className="text-[11px]">{tab.label}</span>
           </button>
         );
       })}

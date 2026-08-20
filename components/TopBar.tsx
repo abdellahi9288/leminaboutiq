@@ -52,65 +52,49 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
 
   return (
     <div
-      className="border-b"
+      className="border-b shrink-0"
       style={{ background: "var(--card)", borderColor: "var(--border-light)" }}
     >
-      {/* Row 1: action buttons + store name */}
-      <div className="flex items-center justify-between px-4 md:px-8 pt-2 pb-1 relative z-10">
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={handleExport}
-            className="btn btn-outline-success btn-sm d-flex align-items-center gap-1 font-tajawal"
-            style={{ fontSize: "12px" }}
-          >
+      {/* Row 1: store name + action icons */}
+      <div className="flex items-center justify-between px-3 md:px-8 pt-2 pb-1 relative z-10">
+        <div className="flex items-center gap-1 shrink-0">
+          <button onClick={handleExport} className="btn btn-light border-0 p-1" style={{ color: "var(--text-muted)" }} title="تحميل">
             <DownloadIcon />
-            تحميل
           </button>
-          <button
-            className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 font-tajawal"
-            style={{ fontSize: "12px" }}
-          >
+          <button className="btn btn-light border-0 p-1" style={{ color: "var(--text-muted)" }} title="إعدادات">
             <SettingsIcon />
-            إعدادات
           </button>
-          <button
-            onClick={handleLogout}
-            className="btn btn-outline-danger btn-sm d-flex align-items-center gap-1 font-tajawal"
-            style={{ fontSize: "12px" }}
-          >
+          <button onClick={handleLogout} className="btn btn-light border-0 p-1" style={{ color: "var(--text-muted)" }} title="خروج">
             <LogoutIcon />
-            خروج
           </button>
         </div>
         <span className="text-[10px] font-bold tracking-[0.12em] uppercase" style={{ color: "var(--gold)" }}>{storeName}</span>
       </div>
 
       {/* Row 2: section title + filters */}
-      <div className="flex items-center justify-between px-4 md:px-8 pb-1.5 pt-0.5 relative z-10">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between px-3 md:px-8 pb-1.5 pt-0 relative z-10">
+        <div className="flex items-center gap-2 overflow-x-auto">
           {filters.map((f) => {
             const isActive = activeFilter === f.key;
             return (
               <button
                 key={f.key}
                 onClick={() => onFilterChange(f.key)}
-                className="btn btn-link text-decoration-none text-[12px] font-tajawal font-bold whitespace-nowrap p-0"
+                className="btn btn-link text-decoration-none text-[11px] font-tajawal font-bold whitespace-nowrap p-0"
                 style={{ color: isActive ? "var(--green-brand)" : "var(--text-muted)" }}
-                onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = "var(--green-brand)"; }}
-                onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = "var(--text-muted)"; }}
               >
                 {f.label}
               </button>
             );
           })}
         </div>
-        <h2 className="text-[15px] font-bold font-tajawal m-0" style={{ color: "var(--text-ink)" }}>
+        <h2 className="text-[14px] font-bold font-tajawal m-0 whitespace-nowrap" style={{ color: "var(--text-ink)" }}>
           {activeTab === "income" ? "الدخل" : activeTab === "expenses" ? "المصاريف" : "المخزون"}
         </h2>
       </div>
 
       {activeFilter === "custom" && (
-        <div className="flex items-center justify-center gap-2 px-4 md:px-8 pb-2 pt-0.5 relative z-10 animate-fade-up">
+        <div className="flex items-center justify-center gap-2 px-3 md:px-8 pb-2 pt-0.5 relative z-10 animate-fade-up">
           <div className="flex items-center gap-1">
             <label className="text-[11px] font-tajawal font-bold" style={{ color: "var(--text-muted)" }}>من</label>
             <input
@@ -121,7 +105,7 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
                 onCustomDateChange?.(e.target.value, customTo);
               }}
               className="btn btn-outline-secondary btn-sm font-tajawal"
-              style={{ fontSize: "12px", padding: "2px 8px" }}
+              style={{ fontSize: "11px", padding: "1px 6px" }}
             />
           </div>
           <div className="flex items-center gap-1">
@@ -134,7 +118,7 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
                 onCustomDateChange?.(customFrom, e.target.value);
               }}
               className="btn btn-outline-secondary btn-sm font-tajawal"
-              style={{ fontSize: "12px", padding: "2px 8px" }}
+              style={{ fontSize: "11px", padding: "1px 6px" }}
             />
           </div>
         </div>
