@@ -8,9 +8,10 @@ import BottomNav from "@/components/BottomNav";
 import EmptyState from "@/components/EmptyState";
 import AddModal from "@/components/AddModal";
 import ItemList from "@/components/ItemList";
+import ActivityList from "@/components/ActivityList";
 import { PlusIcon } from "@/components/Icons";
 
-type TabType = "income" | "expenses" | "inventory";
+type TabType = "dashboard" | "income" | "expenses" | "inventory";
 type FilterType = "today" | "week" | "month" | "custom";
 
 interface UserData {
@@ -25,10 +26,19 @@ interface SummaryData {
   inventoryValue: number;
 }
 
+interface ActivityItem {
+  _id: string;
+  type: "income" | "expense" | "inventory";
+  description: string;
+  amount: number;
+  category: string;
+  date: string;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
-  const [activeTab, setActiveTab] = useState<TabType>("expenses");
+  const [activeTab, setActiveTab] = useState<TabType>("dashboard");
   const [activeFilter, setActiveFilter] = useState<FilterType>("today");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
@@ -38,6 +48,7 @@ export default function DashboardPage() {
     inventoryValue: 0,
   });
   const [items, setItems] = useState<Record<string, unknown>[]>([]);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
@@ -72,7 +83,18 @@ export default function DashboardPage() {
     }
   }, [buildQuery]);
 
+  const fetchActivity = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/activity?${buildQuery()}`);
+      const data = await res.json();
+      setActivity(data);
+    } catch {
+      setActivity([]);
+    }
+  }, [buildQuery]);
+
   const fetchItems = useCallback(async () => {
+    if (activeTab === "dashboard") return;
     setLoading(true);
     try {
       const endpoint =
@@ -92,9 +114,14 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!initialLoad) {
       fetchSummary();
-      fetchItems();
+      if (activeTab === "dashboard") {
+        fetchActivity();
+        setLoading(false);
+      } else {
+        fetchItems();
+      }
     }
-  }, [fetchSummary, fetchItems, initialLoad]);
+  }, [fetchSummary, fetchItems, fetchActivity, initialLoad, activeTab]);
 
   const handleAdd = async (data: Record<string, string | number>) => {
     const endpoint =
@@ -165,6 +192,8 @@ export default function DashboardPage() {
       ? "expense"
       : "inventory";
 
+  const isDashboard = activeTab === "dashboard";
+
   return (
     <div className="h-full w-full flex flex-col" style={{ background: "var(--sand)" }}>
       <TopBar
@@ -176,65 +205,74 @@ export default function DashboardPage() {
         activeTab={activeTab}
       />
 
-      {/* Add button */}
-      <div className="px-3 md:px-8 pt-3 pb-2 shrink-0">
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="btn btn-success w-100 d-flex align-items-center justify-content-center gap-2 font-tajawal font-bold"
-          style={{ padding: "10px 0", fontSize: "15px" }}
-        >
-          <PlusIcon />
-          {activeTab === "income" ? "إضافة دخل" : activeTab === "expenses" ? "إضافة مصروف" : "إضافة منتج"}
-        </button>
-      </div>
-
-      <SummaryCards
-        totalIncome={summary.totalIncome}
-        totalExpenses={summary.totalExpenses}
-        inventoryValue={summary.inventoryValue}
-      />
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto pb-3 pt-1">
-        {loading ? (
-          <div className="flex items-center justify-center py-24">
-            <div
-              className="w-10 h-10 rounded-full animate-spin"
-              style={{ border: "3px solid var(--sand-dark)", borderTopColor: "var(--green-brand)" }}
-            />
+      {isDashboard ? (
+        <>
+          <SummaryCards
+            totalIncome={summary.totalIncome}
+            totalExpenses={summary.totalExpenses}
+            inventoryValue={summary.inventoryValue}
+          />
+          <div className="flex-1 overflow-y-auto pb-3 pt-1">
+            <ActivityList items={activity} />
           </div>
-        ) : items.length === 0 ? (
-          <EmptyState
-            title={emptyConfig[activeTab].title}
-            description={emptyConfig[activeTab].description}
-          />
-        ) : (
-          <ItemList
-            items={items as Array<{
-              _id: string;
-              amount?: number;
-              description?: string;
-              name?: string;
-              quantity?: number;
-              unitPrice?: number;
-              category: string;
-              date?: string;
-              createdAt: string;
-            }>}
-            type={activeTab === "expenses" ? "expense" : activeTab}
-            onDelete={handleDelete}
-          />
-        )}
-      </div>
+        </>
+      ) : (
+        <>
+          <div className="px-3 md:px-8 pt-3 pb-2 shrink-0">
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="btn btn-success w-100 d-flex align-items-center justify-content-center gap-2 font-tajawal font-bold"
+              style={{ padding: "10px 0", fontSize: "15px" }}
+            >
+              <PlusIcon />
+              {activeTab === "income" ? "إضافة دخل" : activeTab === "expenses" ? "إضافة مصروف" : "إضافة منتج"}
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto pb-3 pt-1">
+            {loading ? (
+              <div className="flex items-center justify-center py-24">
+                <div
+                  className="w-10 h-10 rounded-full animate-spin"
+                  style={{ border: "3px solid var(--sand-dark)", borderTopColor: "var(--green-brand)" }}
+                />
+              </div>
+            ) : items.length === 0 ? (
+              <EmptyState
+                title={emptyConfig[activeTab as keyof typeof emptyConfig].title}
+                description={emptyConfig[activeTab as keyof typeof emptyConfig].description}
+              />
+            ) : (
+              <ItemList
+                items={items as Array<{
+                  _id: string;
+                  amount?: number;
+                  description?: string;
+                  name?: string;
+                  quantity?: number;
+                  unitPrice?: number;
+                  category: string;
+                  date?: string;
+                  createdAt: string;
+                }>}
+                type={activeTab === "expenses" ? "expense" : activeTab as "income" | "inventory"}
+                onDelete={handleDelete}
+              />
+            )}
+          </div>
+        </>
+      )}
 
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <AddModal
-        type={modalType}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleAdd}
-      />
+      {!isDashboard && (
+        <AddModal
+          type={modalType}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleAdd}
+        />
+      )}
     </div>
   );
 }

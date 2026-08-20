@@ -14,7 +14,7 @@ declare global {
 }
 
 type FilterType = "today" | "week" | "month" | "custom";
-type TabType = "income" | "expenses" | "inventory";
+type TabType = "dashboard" | "income" | "expenses" | "inventory";
 
 interface TopBarProps {
   userName: string;
@@ -98,7 +98,7 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
     if (key !== "custom") setMenuOpen(false);
   };
 
-  const sectionTitle = activeTab === "income" ? "الدخل" : activeTab === "expenses" ? "المصاريف" : "المخزون";
+  const sectionTitle = activeTab === "dashboard" ? "لوحة التحكم" : activeTab === "income" ? "الدخل" : activeTab === "expenses" ? "المصاريف" : "المخزون";
 
   return (
     <div
