@@ -2,25 +2,39 @@
   "name": "Lemina Boutiq - إدارة المتجر",
   "short_name": "Lemina Boutiq",
   "description": "نظام إدارة المتجر - الدخل والمصاريف والمخزون",
-  "start_url": "/dashboard",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#f4efe6",
   "theme_color": "#166534",
   "orientation": "portrait",
   "lang": "ar",
   "dir": "rtl",
+  "id": "/",
   "icons": [
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

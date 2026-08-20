@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogoutIcon, SettingsIcon, DownloadIcon } from "./Icons";
 
-let deferredPrompt: Event | null = null;
+declare global {
+  interface Window { __pwaPrompt: { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> } | null; }
+}
 
 type FilterType = "today" | "week" | "month" | "custom";
 type TabType = "income" | "expenses" | "inventory";
@@ -32,18 +34,18 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
   const [customTo, setCustomTo] = useState(todayStr);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  useEffect(() => {
-    const handler = (e: Event) => { e.preventDefault(); deferredPrompt = e; };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
-
   const handleInstall = async () => {
-    if (deferredPrompt && "prompt" in deferredPrompt) {
-      (deferredPrompt as { prompt: () => void }).prompt();
-      deferredPrompt = null;
+    const prompt = window.__pwaPrompt;
+    if (prompt) {
+      await prompt.prompt();
+      window.__pwaPrompt = null;
     } else {
-      alert("لتثبيت التطبيق:\n\n📱 iPhone: اضغط على زر المشاركة ⬆️ ثم \"إضافة إلى الشاشة الرئيسية\"\n\n📱 Android: اضغط على ⋮ ثم \"تثبيت التطبيق\" أو \"إضافة إلى الشاشة الرئيسية\"");
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (isIOS) {
+        alert("لتثبيت التطبيق:\n\nاضغط على زر المشاركة ⬆️ في الأسفل\nثم اختر \"إضافة إلى الشاشة الرئيسية\"");
+      } else {
+        alert("لتثبيت التطبيق:\n\nاضغط على ⋮ في أعلى المتصفح\nثم اختر \"تثبيت التطبيق\" أو \"إضافة إلى الشاشة الرئيسية\"");
+      }
     }
   };
 

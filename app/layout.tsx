@@ -44,6 +44,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ar" dir="rtl" className={`${cairo.variable} ${tajawal.variable}`}>
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <script dangerouslySetInnerHTML={{ __html: `
+          window.__pwaPrompt = null;
+          window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            window.__pwaPrompt = e;
+          });
+        `}} />
       </head>
       <body className="h-full w-full overflow-hidden font-cairo">
         {children}
