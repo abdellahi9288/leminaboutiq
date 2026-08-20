@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { LogoutIcon, SettingsIcon, DownloadIcon } from "./Icons";
+
+let deferredPrompt: Event | null = null;
 
 type FilterType = "today" | "week" | "month" | "custom";
 type TabType = "income" | "expenses" | "inventory";
@@ -29,6 +31,21 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
   const [customFrom, setCustomFrom] = useState(todayStr);
   const [customTo, setCustomTo] = useState(todayStr);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: Event) => { e.preventDefault(); deferredPrompt = e; };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (deferredPrompt && "prompt" in deferredPrompt) {
+      (deferredPrompt as { prompt: () => void }).prompt();
+      deferredPrompt = null;
+    } else {
+      alert("لتثبيت التطبيق:\n\n📱 iPhone: اضغط على زر المشاركة ⬆️ ثم \"إضافة إلى الشاشة الرئيسية\"\n\n📱 Android: اضغط على ⋮ ثم \"تثبيت التطبيق\" أو \"إضافة إلى الشاشة الرئيسية\"");
+    }
+  };
 
   const handleLogout = async () => {
     setMenuOpen(false);
@@ -129,6 +146,10 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
                 </div>
               )}
             </div>
+            <div style={{ height: "1px", background: "var(--border-light)" }} />
+            <button onClick={() => { setMenuOpen(false); handleInstall(); }} className="w-full d-flex align-items-center gap-2 px-4 py-3 text-[14px] font-tajawal font-bold border-0 bg-transparent" style={{ color: "var(--green-brand)" }}>
+              <DownloadIcon /> تثبيت التطبيق
+            </button>
             <div style={{ height: "1px", background: "var(--border-light)" }} />
             <button onClick={handleExport} className="w-full d-flex align-items-center gap-2 px-4 py-3 text-[14px] font-tajawal border-0 bg-transparent" style={{ color: "var(--text-body)" }}>
               <DownloadIcon /> تحميل البيانات
