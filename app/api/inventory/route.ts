@@ -1,10 +1,24 @@
 import { NextRequest } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Inventory from "@/lib/models/Inventory";
+import { getDateRange } from "@/lib/dateFilter";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   await dbConnect();
-  const items = await Inventory.find().sort({ createdAt: -1 });
+  const { searchParams } = request.nextUrl;
+  const filter = searchParams.get("filter");
+  const from = searchParams.get("from") || undefined;
+  const to = searchParams.get("to") || undefined;
+
+  if (filter) {
+    const { start, end } = getDateRange(filter, from, to);
+    const items = await Inventory.find({
+      date: { $gte: start, $lte: end },
+    }).sort({ date: -1 });
+    return Response.json(items);
+  }
+
+  const items = await Inventory.find().sort({ date: -1 });
   return Response.json(items);
 }
 
