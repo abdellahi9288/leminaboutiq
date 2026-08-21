@@ -9,9 +9,10 @@ import EmptyState from "@/components/EmptyState";
 import AddModal from "@/components/AddModal";
 import ItemList from "@/components/ItemList";
 import ActivityList from "@/components/ActivityList";
+import DebtList from "@/components/DebtList";
 import { PlusIcon } from "@/components/Icons";
 
-type TabType = "dashboard" | "income" | "expenses" | "inventory";
+type TabType = "dashboard" | "income" | "expenses" | "inventory" | "debts";
 type FilterType = "today" | "week" | "month" | "custom";
 
 interface UserData {
@@ -35,6 +36,17 @@ interface ActivityItem {
   date: string;
 }
 
+interface DebtItem {
+  _id: string;
+  customerName: string;
+  customerPhone: string;
+  description: string;
+  totalAmount: number;
+  remainingAmount: number;
+  payments: Array<{ amount: number; date: string }>;
+  date: string;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
@@ -48,6 +60,7 @@ export default function DashboardPage() {
     inventoryValue: 0,
   });
   const [items, setItems] = useState<Record<string, unknown>[]>([]);
+  const [debts, setDebts] = useState<DebtItem[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [activityPage, setActivityPage] = useState(1);
   const [activityHasMore, setActivityHasMore] = useState(false);
@@ -112,8 +125,18 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const fetchDebts = useCallback(async () => {
+    try {
+      const res = await fetch("/api/debts");
+      const data = await res.json();
+      setDebts(data);
+    } catch {
+      setDebts([]);
+    }
+  }, []);
+
   const fetchItems = useCallback(async () => {
-    if (activeTab === "dashboard") return;
+    if (activeTab === "dashboard" || activeTab === "debts") return;
     setLoading(true);
     try {
       const endpoint = activeTab === "inventory"
@@ -136,11 +159,14 @@ export default function DashboardPage() {
         fetchActivity();
         fetchLowStock();
         setLoading(false);
+      } else if (activeTab === "debts") {
+        fetchDebts();
+        setLoading(false);
       } else {
         fetchItems();
       }
     }
-  }, [fetchSummary, fetchItems, fetchActivity, fetchLowStock, initialLoad, activeTab]);
+  }, [fetchSummary, fetchItems, fetchActivity, fetchLowStock, fetchDebts, initialLoad, activeTab]);
 
   const handleAdd = async (data: Record<string, string | number>) => {
     const endpoint =
@@ -179,16 +205,59 @@ export default function DashboardPage() {
     fetchLowStock();
   };
 
+  const handleSellCredit = async (data: { inventoryItemId: string; quantity: number; salePrice: number; customerName: string; customerPhone: string }) => {
+    const res = await fetch("/api/sell-credit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      alert(result.error || "حدث خطأ");
+      return;
+    }
+    if (result.lowStock) {
+      alert(`⚠️ تنبيه: المنتج "${result.inventoryItem.name}" بقي منه ${result.inventoryItem.quantity} وحدة فقط!`);
+    }
+    fetchItems();
+    fetchSummary();
+    fetchLowStock();
+  };
+
+  const handlePayDebt = async (debtId: string, amount: number) => {
+    const res = await fetch("/api/debts/pay", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ debtId, amount }),
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      alert(result.error || "حدث خطأ");
+      return;
+    }
+    if (result.paid) {
+      alert("تم سداد الدين بالكامل!");
+    }
+    fetchDebts();
+    fetchSummary();
+  };
+
   const handleDelete = async (id: string) => {
     const endpoint =
-      activeTab === "inventory"
+      activeTab === "debts"
+        ? "/api/debts"
+        : activeTab === "inventory"
         ? "/api/inventory"
         : activeTab === "income"
         ? "/api/income"
         : "/api/expenses";
 
     await fetch(`${endpoint}?id=${id}`, { method: "DELETE" });
-    fetchItems();
+    if (activeTab === "debts") {
+      fetchDebts();
+    } else {
+      fetchItems();
+    }
     fetchSummary();
   };
 
@@ -231,6 +300,7 @@ export default function DashboardPage() {
       : "inventory";
 
   const isDashboard = activeTab === "dashboard";
+  const isDebts = activeTab === "debts";
 
   return (
     <div className="h-full w-full flex flex-col" style={{ background: "var(--sand)" }}>
@@ -278,6 +348,10 @@ export default function DashboardPage() {
             />
           </div>
         </>
+      ) : isDebts ? (
+        <div className="flex-1 overflow-y-auto pb-3 pt-3">
+          <DebtList items={debts} onPay={handlePayDebt} onDelete={handleDelete} />
+        </div>
       ) : (
         <>
           <div className="px-3 md:px-8 pt-3 pb-2 shrink-0">
@@ -327,13 +401,14 @@ export default function DashboardPage() {
 
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {!isDashboard && (
+      {!isDashboard && !isDebts && (
         <AddModal
           type={modalType}
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSave={handleAdd}
           onSell={handleSell}
+          onSellCredit={handleSellCredit}
         />
       )}
     </div>

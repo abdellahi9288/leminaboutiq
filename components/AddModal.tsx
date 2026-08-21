@@ -19,6 +19,7 @@ interface AddModalProps {
   onClose: () => void;
   onSave: (data: Record<string, string | number>) => void;
   onSell?: (data: { inventoryItemId: string; quantity: number; salePrice: number }) => void;
+  onSellCredit?: (data: { inventoryItemId: string; quantity: number; salePrice: number; customerName: string; customerPhone: string }) => void;
 }
 
 const categoryOptions = {
@@ -33,13 +34,16 @@ const titles = {
   inventory: "إضافة منتج",
 };
 
-export default function AddModal({ type, isOpen, onClose, onSave, onSell }: AddModalProps) {
+export default function AddModal({ type, isOpen, onClose, onSave, onSell, onSellCredit }: AddModalProps) {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [sellQty, setSellQty] = useState(1);
   const [sellPrice, setSellPrice] = useState(0);
+  const [isCredit, setIsCredit] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -54,6 +58,9 @@ export default function AddModal({ type, isOpen, onClose, onSave, onSell }: AddM
       setSelectedItem(null);
       setSellQty(1);
       setSellPrice(0);
+      setIsCredit(false);
+      setCustomerName("");
+      setCustomerPhone("");
       setError("");
     }
   }, [isOpen, type]);
@@ -74,9 +81,22 @@ export default function AddModal({ type, isOpen, onClose, onSave, onSell }: AddM
       setError(`الكمية المتوفرة ${selectedItem.quantity} فقط`);
       return;
     }
+    if (isCredit && (!customerName.trim() || !customerPhone.trim())) {
+      setError("يجب إدخال اسم ورقم هاتف الزبون");
+      return;
+    }
     setSaving(true);
     setError("");
-    if (onSell) {
+
+    if (isCredit && onSellCredit) {
+      await onSellCredit({
+        inventoryItemId: selectedItem._id,
+        quantity: sellQty,
+        salePrice: sellPrice * sellQty,
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+      });
+    } else if (onSell) {
       await onSell({
         inventoryItemId: selectedItem._id,
         quantity: sellQty,
@@ -171,7 +191,7 @@ export default function AddModal({ type, isOpen, onClose, onSave, onSell }: AddM
 
         {/* Income = sell confirmation form */}
         {type === "income" && selectedItem && (
-          <form onSubmit={handleSell} className="space-y-5">
+          <form onSubmit={handleSell} className="space-y-4">
             <div
               className="border rounded-2xl p-4 text-center"
               style={{ background: "var(--green-wash)", borderColor: "var(--border-light)" }}
@@ -184,21 +204,17 @@ export default function AddModal({ type, isOpen, onClose, onSave, onSell }: AddM
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>الكمية</label>
+                <label className="block text-[13px] font-tajawal font-bold mb-2" style={{ color: "var(--text-muted)" }}>الكمية</label>
                 <input
                   type="number" required min="1" max={selectedItem.quantity}
                   value={sellQty}
-                  onChange={(e) => {
-                    const q = Number(e.target.value);
-                    setSellQty(q);
-                    setSellPrice(selectedItem.unitPrice);
-                  }}
+                  onChange={(e) => { setSellQty(Number(e.target.value)); }}
                   className={inputClass}
                   style={{ background: "var(--cream)", borderColor: "var(--border)", color: "var(--text-body)" }}
                 />
               </div>
               <div>
-                <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>سعر البيع (MRU)</label>
+                <label className="block text-[13px] font-tajawal font-bold mb-2" style={{ color: "var(--text-muted)" }}>سعر البيع (MRU)</label>
                 <input
                   type="number" required min="0"
                   value={sellPrice}
@@ -210,7 +226,7 @@ export default function AddModal({ type, isOpen, onClose, onSave, onSell }: AddM
             </div>
 
             <div
-              className="border rounded-2xl p-4 text-center"
+              className="border rounded-2xl p-3 text-center"
               style={{ background: "var(--cream)", borderColor: "var(--border-light)" }}
             >
               <p className="text-[12px] font-tajawal font-bold" style={{ color: "var(--text-muted)" }}>المبلغ الإجمالي</p>
@@ -220,11 +236,51 @@ export default function AddModal({ type, isOpen, onClose, onSave, onSell }: AddM
               <span className="text-[11px] font-bold" style={{ color: "var(--gold)" }}>MRU</span>
             </div>
 
+            {/* Credit sale toggle */}
+            <button
+              type="button"
+              onClick={() => setIsCredit(!isCredit)}
+              className={`w-full border rounded-2xl p-3.5 flex items-center justify-between font-tajawal font-bold text-[14px] transition-all ${isCredit ? "" : ""}`}
+              style={{
+                background: isCredit ? "#fef3c7" : "var(--cream)",
+                borderColor: isCredit ? "#f59e0b" : "var(--border)",
+                color: isCredit ? "#92400e" : "var(--text-muted)",
+              }}
+            >
+              <span className="text-[18px]">{isCredit ? "✓" : "○"}</span>
+              <span>بيع بالدين</span>
+            </button>
+
+            {/* Credit customer fields */}
+            {isCredit && (
+              <div className="space-y-3 animate-fade-up">
+                <div>
+                  <label className="block text-[13px] font-tajawal font-bold mb-2" style={{ color: "var(--text-muted)" }}>اسم الزبون</label>
+                  <input
+                    type="text" required={isCredit} value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className={inputClass} placeholder="أدخل اسم الزبون"
+                    style={{ background: "var(--cream)", borderColor: "var(--border)", color: "var(--text-body)" }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-tajawal font-bold mb-2" style={{ color: "var(--text-muted)" }}>رقم الهاتف</label>
+                  <input
+                    type="tel" required={isCredit} value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    className={inputClass} placeholder="مثال: 36271730"
+                    dir="ltr"
+                    style={{ background: "var(--cream)", borderColor: "var(--border)", color: "var(--text-body)" }}
+                  />
+                </div>
+              </div>
+            )}
+
             {error && (
               <p className="text-[13px] font-tajawal font-bold text-center" style={{ color: "#dc2626" }}>{error}</p>
             )}
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3 pt-1">
               <button
                 type="button"
                 onClick={() => setSelectedItem(null)}
@@ -239,9 +295,9 @@ export default function AddModal({ type, isOpen, onClose, onSave, onSell }: AddM
                 {saving ? (
                   <span className="d-flex align-items-center justify-content-center gap-2">
                     <span className="spinner-border spinner-border-sm" />
-                    جاري البيع...
+                    {isCredit ? "جاري التسجيل..." : "جاري البيع..."}
                   </span>
-                ) : "تأكيد البيع"}
+                ) : isCredit ? "تأكيد البيع بالدين" : "تأكيد البيع"}
               </button>
             </div>
           </form>
