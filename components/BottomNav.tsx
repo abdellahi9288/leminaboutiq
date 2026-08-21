@@ -10,7 +10,7 @@ interface BottomNavProps {
 }
 
 const tabs: { key: TabType; label: string; Icon: typeof IncomeIcon }[] = [
-  { key: "dashboard", label: "لوحة التحكم", Icon: DashboardIcon },
+  { key: "dashboard", label: "الرئيسية", Icon: DashboardIcon },
   { key: "income", label: "الدخل", Icon: IncomeIcon },
   { key: "expenses", label: "المصاريف", Icon: ExpenseIcon },
   { key: "inventory", label: "المخزون", Icon: InventoryIcon },
@@ -28,7 +28,7 @@ export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
           <button
             key={tab.key}
             onClick={() => onTabChange(tab.key)}
-            className={`btn d-flex flex-column align-items-center gap-1 px-4 py-2 font-tajawal font-bold ${
+            className={`btn d-flex flex-column align-items-center gap-1 py-2 font-tajawal font-bold flex-1 ${
               isActive ? "btn-success" : "btn-light border-0"
             }`}
             style={!isActive ? { color: "var(--text-faint)" } : {}}
