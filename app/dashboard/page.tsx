@@ -10,7 +10,16 @@ import AddModal from "@/components/AddModal";
 import ItemList from "@/components/ItemList";
 import ActivityList from "@/components/ActivityList";
 import DebtList from "@/components/DebtList";
+import SellPage from "@/components/SellPage";
 import { PlusIcon } from "@/components/Icons";
+
+interface SellItem {
+  _id: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  category: string;
+}
 
 type TabType = "dashboard" | "income" | "expenses" | "inventory" | "debts";
 type FilterType = "today" | "week" | "month" | "custom";
@@ -67,6 +76,7 @@ export default function DashboardPage() {
   const [activityLoading, setActivityLoading] = useState(false);
   const [lowStock, setLowStock] = useState<Array<{ _id: string; name: string; quantity: number; unitPrice: number }>>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sellItem, setSellItem] = useState<SellItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
 
@@ -197,6 +207,7 @@ export default function DashboardPage() {
       alert(result.error || "حدث خطأ");
       return;
     }
+    setSellItem(null);
     if (result.lowStock) {
       alert(`⚠️ تنبيه: المنتج "${result.inventoryItem.name}" بقي منه ${result.inventoryItem.quantity} وحدة فقط!`);
     }
@@ -216,6 +227,7 @@ export default function DashboardPage() {
       alert(result.error || "حدث خطأ");
       return;
     }
+    setSellItem(null);
     if (result.lowStock) {
       alert(`⚠️ تنبيه: المنتج "${result.inventoryItem.name}" بقي منه ${result.inventoryItem.quantity} وحدة فقط!`);
     }
@@ -301,6 +313,17 @@ export default function DashboardPage() {
 
   const isDashboard = activeTab === "dashboard";
   const isDebts = activeTab === "debts";
+
+  if (sellItem) {
+    return (
+      <SellPage
+        item={sellItem}
+        onBack={() => setSellItem(null)}
+        onSell={handleSell}
+        onSellCredit={handleSellCredit}
+      />
+    );
+  }
 
   return (
     <div className="h-full w-full flex flex-col" style={{ background: "var(--sand)" }}>
@@ -407,8 +430,7 @@ export default function DashboardPage() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSave={handleAdd}
-          onSell={handleSell}
-          onSellCredit={handleSellCredit}
+          onSelectProduct={(item) => { setIsModalOpen(false); setSellItem(item); }}
         />
       )}
     </div>
