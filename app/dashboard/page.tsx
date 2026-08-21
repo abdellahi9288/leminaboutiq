@@ -108,7 +108,9 @@ export default function DashboardPage() {
     if (activeTab === "dashboard") return;
     setLoading(true);
     try {
-      const endpoint = `/api/${activeTab}?${buildQuery()}`;
+      const endpoint = activeTab === "inventory"
+        ? "/api/inventory"
+        : `/api/${activeTab}?${buildQuery()}`;
       const res = await fetch(endpoint);
       const data = await res.json();
       setItems(data);

@@ -1,25 +1,28 @@
 import { NextRequest } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Inventory from "@/lib/models/Inventory";
-import { getDateRange } from "@/lib/dateFilter";
+import Income from "@/lib/models/Income";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   await dbConnect();
-  const { searchParams } = request.nextUrl;
-  const filter = searchParams.get("filter");
-  const from = searchParams.get("from") || undefined;
-  const to = searchParams.get("to") || undefined;
 
-  if (filter) {
-    const { start, end } = getDateRange(filter, from, to);
-    const items = await Inventory.find({
-      date: { $gte: start, $lte: end },
-    }).sort({ date: -1 });
-    return Response.json(items);
-  }
+  const [items, soldData] = await Promise.all([
+    Inventory.find().sort({ date: -1 }).lean(),
+    Income.aggregate([
+      { $match: { inventoryItemId: { $exists: true } } },
+      { $group: { _id: "$inventoryItemId", totalSold: { $sum: "$quantitySold" } } },
+    ]),
+  ]);
 
-  const items = await Inventory.find().sort({ date: -1 });
-  return Response.json(items);
+  const soldMap = new Map(soldData.map((s) => [String(s._id), s.totalSold]));
+
+  const enriched = items.map((item) => ({
+    ...item,
+    _id: String(item._id),
+    sold: soldMap.get(String(item._id)) || 0,
+  }));
+
+  return Response.json(enriched);
 }
 
 export async function POST(request: NextRequest) {
