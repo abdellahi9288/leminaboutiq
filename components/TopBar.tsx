@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogoutIcon, SettingsIcon, DownloadIcon } from "./Icons";
+import { LogoutIcon, SettingsIcon, DownloadIcon, XMarkIcon } from "./Icons";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -38,6 +38,39 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
   const [customFrom, setCustomFrom] = useState(todayStr);
   const [customTo, setCustomTo] = useState(todayStr);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [currentPwd, setCurrentPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [pwdError, setPwdError] = useState("");
+  const [pwdSuccess, setPwdSuccess] = useState("");
+  const [pwdSaving, setPwdSaving] = useState(false);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwdError("");
+    setPwdSuccess("");
+    setPwdSaving(true);
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword: currentPwd, newPassword: newPwd }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPwdError(data.error);
+      } else {
+        setPwdSuccess("تم تغيير كلمة المرور بنجاح");
+        setCurrentPwd("");
+        setNewPwd("");
+        setTimeout(() => { setShowPassword(false); setPwdSuccess(""); }, 1500);
+      }
+    } catch {
+      setPwdError("حدث خطأ");
+    } finally {
+      setPwdSaving(false);
+    }
+  };
 
   const triggerInstall = async (evt: BeforeInstallPromptEvent) => {
     await evt.prompt();
@@ -170,8 +203,8 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
               <DownloadIcon /> تحميل البيانات
             </button>
             <div style={{ height: "1px", background: "var(--border-light)" }} />
-            <button onClick={() => setMenuOpen(false)} className="w-full d-flex align-items-center gap-2 px-4 py-3 text-[14px] font-tajawal border-0 bg-transparent" style={{ color: "var(--text-body)" }}>
-              <SettingsIcon /> إعدادات
+            <button onClick={() => { setMenuOpen(false); setShowPassword(true); setPwdError(""); setPwdSuccess(""); }} className="w-full d-flex align-items-center gap-2 px-4 py-3 text-[14px] font-tajawal border-0 bg-transparent" style={{ color: "var(--text-body)" }}>
+              <SettingsIcon /> تغيير كلمة المرور
             </button>
             <div style={{ height: "1px", background: "var(--border-light)" }} />
             <button onClick={handleLogout} className="w-full d-flex align-items-center gap-2 px-4 py-3 text-[14px] font-tajawal border-0 bg-transparent" style={{ color: "#dc3545" }}>
@@ -181,12 +214,66 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
         </div>
       )}
 
+      {/* Change password modal */}
+      {showPassword && (
+        <div
+          className="fixed inset-0 flex items-end md:items-center justify-center"
+          style={{ background: "rgba(28,20,16,0.35)", backdropFilter: "blur(4px)", zIndex: 10000 }}
+        >
+          <div
+            className="rounded-t-[28px] md:rounded-[28px] w-full max-w-[420px] p-8 animate-slide-up md:mx-5 border"
+            style={{ background: "var(--card)", borderColor: "var(--border-light)" }}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <button onClick={() => setShowPassword(false)} className="btn btn-light btn-sm border-0" style={{ color: "var(--text-faint)" }}>
+                <XMarkIcon />
+              </button>
+              <h2 className="text-[18px] font-bold font-tajawal" style={{ color: "var(--text-ink)" }}>تغيير كلمة المرور</h2>
+              <div className="w-10" />
+            </div>
+            <form onSubmit={handleChangePassword} className="space-y-5">
+              <div>
+                <label className="block text-[13px] font-tajawal font-bold mb-2" style={{ color: "var(--text-muted)" }}>كلمة المرور الحالية</label>
+                <input
+                  type="password" required value={currentPwd}
+                  onChange={(e) => setCurrentPwd(e.target.value)}
+                  className="w-full border rounded-2xl px-5 py-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-[var(--green-brand)]/20 focus:border-[var(--green-brand)]"
+                  style={{ background: "var(--cream)", borderColor: "var(--border)", color: "var(--text-body)" }}
+                />
+              </div>
+              <div>
+                <label className="block text-[13px] font-tajawal font-bold mb-2" style={{ color: "var(--text-muted)" }}>كلمة المرور الجديدة</label>
+                <input
+                  type="password" required minLength={6} value={newPwd}
+                  onChange={(e) => setNewPwd(e.target.value)}
+                  className="w-full border rounded-2xl px-5 py-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-[var(--green-brand)]/20 focus:border-[var(--green-brand)]"
+                  style={{ background: "var(--cream)", borderColor: "var(--border)", color: "var(--text-body)" }}
+                />
+              </div>
+              {pwdError && <p className="text-[13px] font-tajawal font-bold text-center" style={{ color: "#dc2626" }}>{pwdError}</p>}
+              {pwdSuccess && <p className="text-[13px] font-tajawal font-bold text-center" style={{ color: "#059669" }}>{pwdSuccess}</p>}
+              <button
+                type="submit" disabled={pwdSaving}
+                className="btn btn-success btn-lg w-100 font-tajawal font-bold"
+              >
+                {pwdSaving ? (
+                  <span className="d-flex align-items-center justify-content-center gap-2">
+                    <span className="spinner-border spinner-border-sm" />
+                    جاري الحفظ...
+                  </span>
+                ) : "تغيير كلمة المرور"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Desktop: original layout */}
       <div className="hidden md:block">
         <div className="flex items-center justify-between px-8 pt-2 pb-1 relative z-10">
           <div className="flex items-center gap-1 shrink-0">
             <button onClick={handleExport} className="btn btn-light border-0 p-1" style={{ color: "var(--text-muted)" }}><DownloadIcon /></button>
-            <button className="btn btn-light border-0 p-1" style={{ color: "var(--text-muted)" }}><SettingsIcon /></button>
+            <button onClick={() => { setShowPassword(true); setPwdError(""); setPwdSuccess(""); }} className="btn btn-light border-0 p-1" style={{ color: "var(--text-muted)" }}><SettingsIcon /></button>
             <button onClick={handleLogout} className="btn btn-light border-0 p-1" style={{ color: "var(--text-muted)" }}><LogoutIcon /></button>
           </div>
           <span className="text-[10px] font-bold tracking-[0.12em] uppercase" style={{ color: "var(--gold)" }}>{storeName}</span>
