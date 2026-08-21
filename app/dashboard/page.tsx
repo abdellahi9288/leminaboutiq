@@ -250,12 +250,12 @@ export default function DashboardPage() {
                     ⚠️ تنبيه المخزون
                   </p>
                   {lowStock.map((item) => (
-                    <div key={item._id} className="flex items-center justify-between py-1.5">
-                      <span className="text-[12px] font-tajawal font-bold nums" style={{ color: item.quantity === 0 ? "#dc2626" : "#ea580c" }}>
-                        {item.quantity === 0 ? "نفد" : `${item.quantity} وحدة`}
-                      </span>
+                    <div key={item._id} className="flex items-center justify-between py-1.5" dir="rtl">
                       <span className="text-[13px] font-tajawal font-bold" style={{ color: "#991b1b" }}>
                         {item.name}
+                      </span>
+                      <span className="text-[12px] font-tajawal font-bold" style={{ color: item.quantity === 0 ? "#dc2626" : "#ea580c" }}>
+                        {item.quantity === 0 ? "نفد" : <><span className="nums">{item.quantity}</span> وحدة</>}
                       </span>
                     </div>
                   ))}
