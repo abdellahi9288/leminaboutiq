@@ -1,10 +1,12 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface IIncome extends Document {
   amount: number;
   description: string;
   category: string;
   date: Date;
+  inventoryItemId?: Types.ObjectId;
+  quantitySold?: number;
   createdAt: Date;
 }
 
@@ -14,6 +16,8 @@ const IncomeSchema = new Schema<IIncome>(
     description: { type: String, required: true },
     category: { type: String, default: "بيع" },
     date: { type: Date, default: Date.now },
+    inventoryItemId: { type: Schema.Types.ObjectId, ref: "Inventory" },
+    quantitySold: { type: Number },
   },
   { timestamps: true }
 );

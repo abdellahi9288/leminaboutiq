@@ -1,15 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { XMarkIcon } from "./Icons";
 
 type ModalType = "income" | "expense" | "inventory";
+
+interface InventoryItem {
+  _id: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  category: string;
+}
 
 interface AddModalProps {
   type: ModalType;
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: Record<string, string | number>) => void;
+  onSell?: (data: { inventoryItemId: string; quantity: number; salePrice: number }) => void;
 }
 
 const categoryOptions = {
@@ -19,16 +28,65 @@ const categoryOptions = {
 };
 
 const titles = {
-  income: "إضافة دخل",
+  income: "بيع منتج",
   expense: "إضافة مصروف",
   inventory: "إضافة منتج",
 };
 
-export default function AddModal({ type, isOpen, onClose, onSave }: AddModalProps) {
+export default function AddModal({ type, isOpen, onClose, onSave, onSell }: AddModalProps) {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [sellQty, setSellQty] = useState(1);
+  const [sellPrice, setSellPrice] = useState(0);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (isOpen && type === "income") {
+      fetch("/api/inventory")
+        .then((r) => r.json())
+        .then((data) => setInventoryItems(data.filter((i: InventoryItem) => i.quantity > 0)))
+        .catch(() => setInventoryItems([]));
+    }
+    if (isOpen) {
+      setFormData({});
+      setSelectedItem(null);
+      setSellQty(1);
+      setSellPrice(0);
+      setError("");
+    }
+  }, [isOpen, type]);
 
   if (!isOpen) return null;
+
+  const handleSelectItem = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setSellQty(1);
+    setSellPrice(item.unitPrice);
+    setError("");
+  };
+
+  const handleSell = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedItem) return;
+    if (sellQty > selectedItem.quantity) {
+      setError(`الكمية المتوفرة ${selectedItem.quantity} فقط`);
+      return;
+    }
+    setSaving(true);
+    setError("");
+    if (onSell) {
+      await onSell({
+        inventoryItemId: selectedItem._id,
+        quantity: sellQty,
+        salePrice: sellPrice * sellQty,
+      });
+    }
+    setSaving(false);
+    setSelectedItem(null);
+    onClose();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,10 +111,10 @@ export default function AddModal({ type, isOpen, onClose, onSave }: AddModalProp
     >
       <div
         className="rounded-t-[28px] md:rounded-[28px] w-full max-w-[480px] p-8 animate-slide-up md:mx-5 border"
-        style={{ background: "var(--card)", borderColor: "var(--border-light)" }}
+        style={{ background: "var(--card)", borderColor: "var(--border-light)", maxHeight: "85vh", overflowY: "auto" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <button
             onClick={onClose}
             className="btn btn-light btn-sm border-0"
@@ -70,108 +128,240 @@ export default function AddModal({ type, isOpen, onClose, onSave }: AddModalProp
           <div className="w-10" />
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {type === "inventory" ? (
-            <>
+        {/* Income = sell from inventory */}
+        {type === "income" && !selectedItem && (
+          <div>
+            {inventoryItems.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-[16px] font-bold font-tajawal" style={{ color: "var(--text-ink)" }}>لا توجد منتجات في المخزون</p>
+                <p className="text-[13px] mt-2" style={{ color: "var(--text-muted)" }}>أضف منتجات في قسم المخزون أولاً</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-[13px] font-tajawal font-bold mb-3" style={{ color: "var(--text-muted)" }}>اختر المنتج للبيع</p>
+                {inventoryItems.map((item) => (
+                  <button
+                    key={item._id}
+                    onClick={() => handleSelectItem(item)}
+                    className="w-full border rounded-2xl p-4 flex items-center justify-between text-right transition-all"
+                    style={{
+                      background: item.quantity <= 1 ? "#fef2f2" : "var(--cream)",
+                      borderColor: item.quantity <= 1 ? "#fca5a5" : "var(--border)",
+                    }}
+                  >
+                    <div className="text-left shrink-0">
+                      <span className="text-[14px] font-bold nums" style={{ color: "var(--green-deep)" }}>
+                        {new Intl.NumberFormat("fr-FR").format(item.unitPrice)}
+                      </span>
+                      <span className="text-[9px] font-bold mr-0.5" style={{ color: "var(--gold)" }}> MRU</span>
+                    </div>
+                    <div>
+                      <p className="text-[15px] font-bold font-tajawal" style={{ color: "var(--text-ink)" }}>{item.name}</p>
+                      <p className="text-[12px] mt-0.5" style={{ color: item.quantity <= 1 ? "#dc2626" : "var(--text-muted)" }}>
+                        <span className="nums">{item.quantity}</span> وحدة متوفرة
+                        {item.quantity <= 1 && " ⚠️"}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Income = sell confirmation form */}
+        {type === "income" && selectedItem && (
+          <form onSubmit={handleSell} className="space-y-5">
+            <div
+              className="border rounded-2xl p-4 text-center"
+              style={{ background: "var(--green-wash)", borderColor: "var(--border-light)" }}
+            >
+              <p className="text-[18px] font-bold font-tajawal" style={{ color: "var(--green-deep)" }}>{selectedItem.name}</p>
+              <p className="text-[13px] mt-1" style={{ color: "var(--text-muted)" }}>
+                متوفر: <span className="nums font-bold" style={{ color: selectedItem.quantity <= 1 ? "#dc2626" : "var(--green-brand)" }}>{selectedItem.quantity}</span> وحدة
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>اسم المنتج</label>
+                <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>الكمية</label>
                 <input
-                  type="text" required value={formData.name || ""}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className={inputClass} placeholder="أدخل اسم المنتج"
+                  type="number" required min="1" max={selectedItem.quantity}
+                  value={sellQty}
+                  onChange={(e) => {
+                    const q = Number(e.target.value);
+                    setSellQty(q);
+                    setSellPrice(selectedItem.unitPrice);
+                  }}
+                  className={inputClass}
                   style={{ background: "var(--cream)", borderColor: "var(--border)", color: "var(--text-body)" }}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>الكمية</label>
-                  <input
-                    type="number" required min="0" value={formData.quantity || ""}
-                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                    className={inputClass} placeholder="0"
-                    style={{ background: "var(--cream)", borderColor: "var(--border)", color: "var(--text-body)" }}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>سعر الوحدة (MRU)</label>
-                  <input
-                    type="number" required min="0" value={formData.unitPrice || ""}
-                    onChange={(e) => setFormData({ ...formData, unitPrice: e.target.value })}
-                    className={inputClass} placeholder="0"
-                    style={{ background: "var(--cream)", borderColor: "var(--border)", color: "var(--text-body)" }}
-                  />
-                </div>
-              </div>
               <div>
-                <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>الفئة</label>
+                <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>سعر البيع (MRU)</label>
                 <input
-                  type="text" value={formData.category || ""}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className={inputClass} placeholder="عام"
+                  type="number" required min="0"
+                  value={sellPrice}
+                  onChange={(e) => setSellPrice(Number(e.target.value))}
+                  className={inputClass}
                   style={{ background: "var(--cream)", borderColor: "var(--border)", color: "var(--text-body)" }}
                 />
               </div>
-            </>
-          ) : (
-            <>
+            </div>
+
+            <div
+              className="border rounded-2xl p-4 text-center"
+              style={{ background: "var(--cream)", borderColor: "var(--border-light)" }}
+            >
+              <p className="text-[12px] font-tajawal font-bold" style={{ color: "var(--text-muted)" }}>المبلغ الإجمالي</p>
+              <p className="text-[26px] font-bold font-tajawal nums mt-1" style={{ color: "var(--green-deep)" }}>
+                {new Intl.NumberFormat("fr-FR").format(sellPrice * sellQty)}
+              </p>
+              <span className="text-[11px] font-bold" style={{ color: "var(--gold)" }}>MRU</span>
+            </div>
+
+            {error && (
+              <p className="text-[13px] font-tajawal font-bold text-center" style={{ color: "#dc2626" }}>{error}</p>
+            )}
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setSelectedItem(null)}
+                className="btn btn-outline-secondary flex-1 font-tajawal font-bold"
+              >
+                رجوع
+              </button>
+              <button
+                type="submit" disabled={saving}
+                className="btn btn-success flex-1 font-tajawal font-bold"
+              >
+                {saving ? (
+                  <span className="d-flex align-items-center justify-content-center gap-2">
+                    <span className="spinner-border spinner-border-sm" />
+                    جاري البيع...
+                  </span>
+                ) : "تأكيد البيع"}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Expense form */}
+        {type === "expense" && (
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>المبلغ (MRU)</label>
+              <input
+                type="number" required min="1" value={formData.amount || ""}
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                className={inputClass} placeholder="0"
+                style={{ background: "var(--cream)", borderColor: "var(--border)", color: "var(--text-body)" }}
+              />
+            </div>
+            <div>
+              <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>الوصف</label>
+              <input
+                type="text" required value={formData.description || ""}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className={inputClass} placeholder="وصف المصروف"
+                style={{ background: "var(--cream)", borderColor: "var(--border)", color: "var(--text-body)" }}
+              />
+            </div>
+            <div>
+              <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>الفئة</label>
+              <select
+                value={formData.category || categoryOptions.expense[0]}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                className={inputClass}
+                style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--text-body)" }}
+              >
+                {categoryOptions.expense.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>التاريخ</label>
+              <input
+                type="date" value={formData.date || new Date().toISOString().split("T")[0]}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                className={inputClass}
+                style={{ background: "var(--cream)", borderColor: "var(--border)", color: "var(--text-body)" }}
+              />
+            </div>
+            <div className="pt-3">
+              <button
+                type="submit" disabled={saving}
+                className="btn btn-success btn-lg w-100 font-tajawal font-bold"
+              >
+                {saving ? (
+                  <span className="d-flex align-items-center justify-content-center gap-2">
+                    <span className="spinner-border spinner-border-sm" />
+                    جاري الحفظ...
+                  </span>
+                ) : "حفظ"}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Inventory form */}
+        {type === "inventory" && (
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>اسم المنتج</label>
+              <input
+                type="text" required value={formData.name || ""}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className={inputClass} placeholder="أدخل اسم المنتج"
+                style={{ background: "var(--cream)", borderColor: "var(--border)", color: "var(--text-body)" }}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>المبلغ (MRU)</label>
+                <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>الكمية</label>
                 <input
-                  type="number" required min="1" value={formData.amount || ""}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  type="number" required min="0" value={formData.quantity || ""}
+                  onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                   className={inputClass} placeholder="0"
                   style={{ background: "var(--cream)", borderColor: "var(--border)", color: "var(--text-body)" }}
                 />
               </div>
               <div>
-                <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>الوصف</label>
+                <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>سعر الوحدة (MRU)</label>
                 <input
-                  type="text" required value={formData.description || ""}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className={inputClass} placeholder={type === "income" ? "وصف الدخل" : "وصف المصروف"}
+                  type="number" required min="0" value={formData.unitPrice || ""}
+                  onChange={(e) => setFormData({ ...formData, unitPrice: e.target.value })}
+                  className={inputClass} placeholder="0"
                   style={{ background: "var(--cream)", borderColor: "var(--border)", color: "var(--text-body)" }}
                 />
               </div>
-              <div>
-                <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>الفئة</label>
-                <select
-                  value={formData.category || categoryOptions[type][0]}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className={inputClass}
-                  style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--text-body)" }}
-                >
-                  {categoryOptions[type].map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>التاريخ</label>
-                <input
-                  type="date" value={formData.date || new Date().toISOString().split("T")[0]}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className={inputClass}
-                  style={{ background: "var(--cream)", borderColor: "var(--border)", color: "var(--text-body)" }}
-                />
-              </div>
-            </>
-          )}
-
-          <div className="pt-3">
-            <button
-              type="submit" disabled={saving}
-              className="btn btn-success btn-lg w-100 font-tajawal font-bold"
-            >
-              {saving ? (
-                <span className="d-flex align-items-center justify-content-center gap-2">
-                  <span className="spinner-border spinner-border-sm" />
-                  جاري الحفظ...
-                </span>
-              ) : "حفظ"}
-            </button>
-          </div>
-        </form>
+            </div>
+            <div>
+              <label className="block text-[13px] font-tajawal font-bold mb-2.5" style={{ color: "var(--text-muted)" }}>الفئة</label>
+              <input
+                type="text" value={formData.category || ""}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                className={inputClass} placeholder="عام"
+                style={{ background: "var(--cream)", borderColor: "var(--border)", color: "var(--text-body)" }}
+              />
+            </div>
+            <div className="pt-3">
+              <button
+                type="submit" disabled={saving}
+                className="btn btn-success btn-lg w-100 font-tajawal font-bold"
+              >
+                {saving ? (
+                  <span className="d-flex align-items-center justify-content-center gap-2">
+                    <span className="spinner-border spinner-border-sm" />
+                    جاري الحفظ...
+                  </span>
+                ) : "حفظ"}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

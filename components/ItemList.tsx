@@ -39,8 +39,8 @@ export default function ItemList({ items, type, onDelete }: ItemListProps) {
           key={item._id}
           className="border rounded-2xl p-4 flex items-center justify-between animate-fade-up"
           style={{
-            background: "var(--card)",
-            borderColor: "var(--border-light)",
+            background: type === "inventory" && (item.quantity || 0) <= 1 ? "#fef2f2" : "var(--card)",
+            borderColor: type === "inventory" && (item.quantity || 0) <= 1 ? "#fca5a5" : "var(--border-light)",
             animationDelay: `${i * 50}ms`,
           }}
         >
@@ -59,8 +59,10 @@ export default function ItemList({ items, type, onDelete }: ItemListProps) {
                 <p className="text-[15px] font-bold font-tajawal truncate" style={{ color: "var(--text-ink)" }}>
                   {item.name}
                 </p>
-                <p className="text-[13px] mt-1" style={{ color: "var(--text-muted)" }}>
-                  <span className="nums">{item.quantity}</span> وحدة &times; <span className="nums">{formatMRU(item.unitPrice || 0)}</span>
+                <p className="text-[13px] mt-1" style={{ color: (item.quantity || 0) <= 1 ? "#dc2626" : "var(--text-muted)" }}>
+                  <span className="nums font-bold">{item.quantity}</span> وحدة &times; <span className="nums">{formatMRU(item.unitPrice || 0)}</span>
+                  {(item.quantity || 0) === 0 && <span className="font-tajawal font-bold mr-2"> — نفد المخزون</span>}
+                  {(item.quantity || 0) === 1 && <span className="font-tajawal font-bold mr-2"> — آخر وحدة ⚠️</span>}
                 </p>
               </>
             ) : (

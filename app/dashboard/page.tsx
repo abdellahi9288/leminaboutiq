@@ -49,6 +49,7 @@ export default function DashboardPage() {
   });
   const [items, setItems] = useState<Record<string, unknown>[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [lowStock, setLowStock] = useState<Array<{ _id: string; name: string; quantity: number; unitPrice: number }>>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
@@ -93,6 +94,16 @@ export default function DashboardPage() {
     }
   }, [buildQuery]);
 
+  const fetchLowStock = useCallback(async () => {
+    try {
+      const res = await fetch("/api/inventory/low-stock");
+      const data = await res.json();
+      setLowStock(data);
+    } catch {
+      setLowStock([]);
+    }
+  }, []);
+
   const fetchItems = useCallback(async () => {
     if (activeTab === "dashboard") return;
     setLoading(true);
@@ -113,20 +124,21 @@ export default function DashboardPage() {
       fetchSummary();
       if (activeTab === "dashboard") {
         fetchActivity();
+        fetchLowStock();
         setLoading(false);
       } else {
         fetchItems();
       }
     }
-  }, [fetchSummary, fetchItems, fetchActivity, initialLoad, activeTab]);
+  }, [fetchSummary, fetchItems, fetchActivity, fetchLowStock, initialLoad, activeTab]);
 
   const handleAdd = async (data: Record<string, string | number>) => {
     const endpoint =
       activeTab === "inventory"
         ? "/api/inventory"
-        : activeTab === "income"
-        ? "/api/income"
-        : "/api/expenses";
+        : activeTab === "expenses"
+        ? "/api/expenses"
+        : "/api/income";
 
     await fetch(endpoint, {
       method: "POST",
@@ -136,6 +148,25 @@ export default function DashboardPage() {
 
     fetchItems();
     fetchSummary();
+  };
+
+  const handleSell = async (data: { inventoryItemId: string; quantity: number; salePrice: number }) => {
+    const res = await fetch("/api/sell", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      alert(result.error || "حدث خطأ");
+      return;
+    }
+    if (result.lowStock) {
+      alert(`⚠️ تنبيه: المنتج "${result.inventoryItem.name}" بقي منه ${result.inventoryItem.quantity} وحدة فقط!`);
+    }
+    fetchItems();
+    fetchSummary();
+    fetchLowStock();
   };
 
   const handleDelete = async (id: string) => {
@@ -210,6 +241,25 @@ export default function DashboardPage() {
             inventoryValue={summary.inventoryValue}
           />
           <div className="flex-1 overflow-y-auto pb-3 pt-1">
+            {lowStock.length > 0 && (
+              <div className="px-3 md:px-10 mb-3">
+                <div className="rounded-2xl border p-3" style={{ background: "#fef2f2", borderColor: "#fca5a5" }}>
+                  <p className="text-[13px] font-tajawal font-bold mb-2" style={{ color: "#dc2626" }}>
+                    ⚠️ تنبيه المخزون
+                  </p>
+                  {lowStock.map((item) => (
+                    <div key={item._id} className="flex items-center justify-between py-1.5">
+                      <span className="text-[12px] font-tajawal font-bold nums" style={{ color: item.quantity === 0 ? "#dc2626" : "#ea580c" }}>
+                        {item.quantity === 0 ? "نفد" : `${item.quantity} وحدة`}
+                      </span>
+                      <span className="text-[13px] font-tajawal font-bold" style={{ color: "#991b1b" }}>
+                        {item.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <ActivityList items={activity} />
           </div>
         </>
@@ -268,6 +318,7 @@ export default function DashboardPage() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSave={handleAdd}
+          onSell={handleSell}
         />
       )}
     </div>
