@@ -6,6 +6,7 @@ export interface IInventory extends Document {
   unitPrice: number;
   category: string;
   date: Date;
+  totalSold: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,6 +18,7 @@ const InventorySchema = new Schema<IInventory>(
     unitPrice: { type: Number, required: true },
     category: { type: String, default: "عام" },
     date: { type: Date, default: Date.now },
+    totalSold: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
   });
 
   item.quantity -= quantity;
+  item.totalSold = (item.totalSold || 0) + quantity;
   await item.save();
 
   return Response.json(

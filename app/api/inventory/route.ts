@@ -1,25 +1,15 @@
 import { NextRequest } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Inventory from "@/lib/models/Inventory";
-import Income from "@/lib/models/Income";
 
 export async function GET() {
   await dbConnect();
-
-  const [items, soldData] = await Promise.all([
-    Inventory.find().sort({ date: -1 }).lean(),
-    Income.aggregate([
-      { $match: { inventoryItemId: { $exists: true } } },
-      { $group: { _id: "$inventoryItemId", totalSold: { $sum: "$quantitySold" } } },
-    ]),
-  ]);
-
-  const soldMap = new Map(soldData.map((s) => [String(s._id), s.totalSold]));
+  const items = await Inventory.find().sort({ date: -1 }).lean();
 
   const enriched = items.map((item) => ({
     ...item,
     _id: String(item._id),
-    sold: soldMap.get(String(item._id)) || 0,
+    sold: item.totalSold || 0,
   }));
 
   return Response.json(enriched);
