@@ -28,7 +28,7 @@ interface SummaryData {
 
 interface ActivityItem {
   _id: string;
-  type: "income" | "expense" | "inventory";
+  type: "income" | "expense";
   description: string;
   amount: number;
   category: string;
@@ -49,6 +49,9 @@ export default function DashboardPage() {
   });
   const [items, setItems] = useState<Record<string, unknown>[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [activityPage, setActivityPage] = useState(1);
+  const [activityHasMore, setActivityHasMore] = useState(false);
+  const [activityLoading, setActivityLoading] = useState(false);
   const [lowStock, setLowStock] = useState<Array<{ _id: string; name: string; quantity: number; unitPrice: number }>>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -84,13 +87,18 @@ export default function DashboardPage() {
     }
   }, [buildQuery]);
 
-  const fetchActivity = useCallback(async () => {
+  const fetchActivity = useCallback(async (page = 1, append = false) => {
+    setActivityLoading(true);
     try {
-      const res = await fetch(`/api/activity?${buildQuery()}`);
+      const res = await fetch(`/api/activity?${buildQuery()}&page=${page}`);
       const data = await res.json();
-      setActivity(data);
+      setActivity((prev) => append ? [...prev, ...data.items] : data.items);
+      setActivityHasMore(data.hasMore);
+      setActivityPage(page);
     } catch {
-      setActivity([]);
+      if (!append) setActivity([]);
+    } finally {
+      setActivityLoading(false);
     }
   }, [buildQuery]);
 
@@ -262,7 +270,12 @@ export default function DashboardPage() {
                 </div>
               </div>
             )}
-            <ActivityList items={activity} />
+            <ActivityList
+              items={activity}
+              hasMore={activityHasMore}
+              loading={activityLoading}
+              onLoadMore={() => fetchActivity(activityPage + 1, true)}
+            />
           </div>
         </>
       ) : (

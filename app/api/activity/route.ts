@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Income from "@/lib/models/Income";
 import Expense from "@/lib/models/Expense";
-import Inventory from "@/lib/models/Inventory";
 import { getDateRange } from "@/lib/dateFilter";
 
 export async function GET(request: NextRequest) {
@@ -11,19 +10,23 @@ export async function GET(request: NextRequest) {
   const filter = searchParams.get("filter") || "today";
   const from = searchParams.get("from") || undefined;
   const to = searchParams.get("to") || undefined;
+  const page = parseInt(searchParams.get("page") || "1");
+  const limit = 10;
+  const skip = (page - 1) * limit;
 
   const { start, end } = getDateRange(filter, from, to);
   const dateQuery = { date: { $gte: start, $lte: end } };
 
-  const [incomes, expenses, inventoryItems] = await Promise.all([
-    Income.find(dateQuery).sort({ date: -1 }).limit(20).lean(),
-    Expense.find(dateQuery).sort({ date: -1 }).limit(20).lean(),
-    Inventory.find().sort({ updatedAt: -1 }).limit(10).lean(),
+  const [incomes, expenses, incomeCount, expenseCount] = await Promise.all([
+    Income.find(dateQuery).sort({ date: -1 }).skip(skip).limit(limit).lean(),
+    Expense.find(dateQuery).sort({ date: -1 }).skip(skip).limit(limit).lean(),
+    Income.countDocuments(dateQuery),
+    Expense.countDocuments(dateQuery),
   ]);
 
   type ActivityEntry = {
     _id: string;
-    type: "income" | "expense" | "inventory";
+    type: "income" | "expense";
     description: string;
     amount: number;
     category: string;
@@ -54,18 +57,10 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  for (const inv of inventoryItems) {
-    activity.push({
-      _id: String(inv._id),
-      type: "inventory",
-      description: inv.name,
-      amount: inv.quantity * inv.unitPrice,
-      category: inv.category,
-      date: (inv.updatedAt || inv.createdAt).toISOString(),
-    });
-  }
-
   activity.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  return Response.json(activity.slice(0, 15));
+  const total = incomeCount + expenseCount;
+  const hasMore = skip + limit < total;
+
+  return Response.json({ items: activity.slice(0, limit), page, hasMore, total });
 }

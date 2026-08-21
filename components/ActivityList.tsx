@@ -2,7 +2,7 @@
 
 interface ActivityItem {
   _id: string;
-  type: "income" | "expense" | "inventory";
+  type: "income" | "expense";
   description: string;
   amount: number;
   category: string;
@@ -11,6 +11,9 @@ interface ActivityItem {
 
 interface ActivityListProps {
   items: ActivityItem[];
+  hasMore: boolean;
+  loading: boolean;
+  onLoadMore: () => void;
 }
 
 function formatMRU(amount: number) {
@@ -45,19 +48,10 @@ const typeConfig = {
       </svg>
     ),
   },
-  inventory: {
-    label: "مخزون",
-    color: "#2563eb",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-5 h-5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
-      </svg>
-    ),
-  },
 };
 
-export default function ActivityList({ items }: ActivityListProps) {
-  if (items.length === 0) {
+export default function ActivityList({ items, hasMore, loading, onLoadMore }: ActivityListProps) {
+  if (items.length === 0 && !loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-6 animate-fade-up">
         <h3 className="text-[18px] font-bold font-tajawal" style={{ color: "var(--text-ink)" }}>
@@ -120,6 +114,22 @@ export default function ActivityList({ items }: ActivityListProps) {
           </div>
         );
       })}
+
+      {hasMore && (
+        <button
+          onClick={onLoadMore}
+          disabled={loading}
+          className="btn btn-outline-secondary w-100 font-tajawal font-bold mt-2"
+          style={{ fontSize: "13px", padding: "10px" }}
+        >
+          {loading ? (
+            <span className="d-flex align-items-center justify-content-center gap-2">
+              <span className="spinner-border spinner-border-sm" />
+              جاري التحميل...
+            </span>
+          ) : "عرض المزيد"}
+        </button>
+      )}
     </div>
   );
 }
