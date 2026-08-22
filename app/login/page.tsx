@@ -39,14 +39,7 @@ export default function LoginPage() {
 
         {/* Avatar icon */}
         <div className="text-center mb-8 animate-fade-up">
-          <div
-            className="w-[80px] h-[80px] rounded-full flex items-center justify-center mx-auto mb-5"
-            style={{ border: "3px solid var(--green-brand)" }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="var(--green-brand)" className="w-10 h-10">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-            </svg>
-          </div>
+          <img src="/icons/icon-192.png" alt="حساباتي" className="w-[90px] h-[90px] mx-auto mb-5" />
           <h1 className="text-[28px] font-bold font-tajawal" style={{ color: "var(--green-brand)" }}>حساباتي</h1>
           <p className="text-[16px] font-bold font-tajawal mt-2" style={{ color: "var(--text-ink)" }}>مرحباً بك</p>
           <p className="text-[13px] mt-1" style={{ color: "var(--text-muted)" }}>سجّل الدخول إلى حسابك</p>
