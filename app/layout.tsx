@@ -46,13 +46,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
-        <script dangerouslySetInnerHTML={{ __html: `
-          window.__pwaPrompt = null;
-          window.addEventListener('beforeinstallprompt', function(e) {
-            e.preventDefault();
-            window.__pwaPrompt = e;
-          });
-        `}} />
       </head>
       <body className="h-full w-full overflow-hidden font-cairo">
         {children}
