@@ -21,8 +21,8 @@ const tabs: { key: TabType; label: string; Icon: typeof IncomeIcon }[] = [
 export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   return (
     <nav
-      className="border-t flex justify-center items-center py-1.5 px-3 gap-1.5 shrink-0"
-      style={{ background: "var(--card)", borderColor: "var(--border-light)", paddingBottom: "calc(0.375rem + env(safe-area-inset-bottom, 0px))" }}
+      className="border-t flex justify-center items-center py-1 px-1.5 gap-0.5 shrink-0"
+      style={{ background: "var(--card)", borderColor: "var(--border-light)", paddingBottom: "calc(0.25rem + env(safe-area-inset-bottom, 0px))" }}
     >
       {tabs.map((tab) => {
         const isActive = activeTab === tab.key;
@@ -30,13 +30,18 @@ export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
           <button
             key={tab.key}
             onClick={() => onTabChange(tab.key)}
-            className={`btn d-flex flex-column align-items-center gap-1 py-2 font-tajawal font-bold flex-1 ${
+            className={`btn d-flex flex-column align-items-center gap-0 py-1.5 px-0 font-tajawal font-bold flex-1 ${
               isActive ? "btn-success" : "btn-light border-0"
             }`}
-            style={!isActive ? { color: "var(--text-faint)" } : {}}
+            style={{
+              ...(!isActive ? { color: "var(--text-faint)" } : {}),
+              minWidth: 0,
+              fontSize: "10px",
+              borderRadius: "10px",
+            }}
           >
             <tab.Icon active={isActive} />
-            <span className="text-[12px]">{tab.label}</span>
+            <span className="text-[10px] leading-tight mt-0.5">{tab.label}</span>
           </button>
         );
       })}
