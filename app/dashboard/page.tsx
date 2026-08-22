@@ -10,6 +10,8 @@ import AddModal from "@/components/AddModal";
 import ItemList from "@/components/ItemList";
 import ActivityList from "@/components/ActivityList";
 import DebtList from "@/components/DebtList";
+import MyDebtList from "@/components/MyDebtList";
+import MyDebtModal from "@/components/MyDebtModal";
 import SellPage from "@/components/SellPage";
 import { PlusIcon } from "@/components/Icons";
 
@@ -21,7 +23,7 @@ interface SellItem {
   category: string;
 }
 
-type TabType = "dashboard" | "income" | "expenses" | "inventory" | "debts";
+type TabType = "dashboard" | "income" | "expenses" | "inventory" | "debts" | "myDebts";
 type FilterType = "today" | "week" | "month" | "custom";
 
 interface UserData {
@@ -56,6 +58,17 @@ interface DebtItem {
   date: string;
 }
 
+interface MyDebtItem {
+  _id: string;
+  creditorName: string;
+  creditorPhone: string;
+  debtName: string;
+  totalAmount: number;
+  remainingAmount: number;
+  payments: Array<{ amount: number; date: string }>;
+  date: string;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
@@ -70,6 +83,8 @@ export default function DashboardPage() {
   });
   const [items, setItems] = useState<Record<string, unknown>[]>([]);
   const [debts, setDebts] = useState<DebtItem[]>([]);
+  const [myDebts, setMyDebts] = useState<MyDebtItem[]>([]);
+  const [isMyDebtModalOpen, setIsMyDebtModalOpen] = useState(false);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [activityPage, setActivityPage] = useState(1);
   const [activityHasMore, setActivityHasMore] = useState(false);
@@ -145,8 +160,18 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const fetchMyDebts = useCallback(async () => {
+    try {
+      const res = await fetch("/api/my-debts");
+      const data = await res.json();
+      setMyDebts(data);
+    } catch {
+      setMyDebts([]);
+    }
+  }, []);
+
   const fetchItems = useCallback(async () => {
-    if (activeTab === "dashboard" || activeTab === "debts") return;
+    if (activeTab === "dashboard" || activeTab === "debts" || activeTab === "myDebts") return;
     setLoading(true);
     try {
       const endpoint = activeTab === "inventory"
@@ -172,11 +197,14 @@ export default function DashboardPage() {
       } else if (activeTab === "debts") {
         fetchDebts();
         setLoading(false);
+      } else if (activeTab === "myDebts") {
+        fetchMyDebts();
+        setLoading(false);
       } else {
         fetchItems();
       }
     }
-  }, [fetchSummary, fetchItems, fetchActivity, fetchLowStock, fetchDebts, initialLoad, activeTab]);
+  }, [fetchSummary, fetchItems, fetchActivity, fetchLowStock, fetchDebts, fetchMyDebts, initialLoad, activeTab]);
 
   const handleAdd = async (data: Record<string, string | number>) => {
     const endpoint =
@@ -234,6 +262,40 @@ export default function DashboardPage() {
     fetchItems();
     fetchSummary();
     fetchLowStock();
+  };
+
+  const handleAddMyDebt = async (data: Record<string, string | number>) => {
+    await fetch("/api/my-debts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    fetchMyDebts();
+    fetchSummary();
+  };
+
+  const handlePayMyDebt = async (debtId: string, amount: number) => {
+    const res = await fetch("/api/my-debts/pay", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ debtId, amount }),
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      alert(result.error || "حدث خطأ");
+      return;
+    }
+    if (result.paid) {
+      alert("تم سداد الدين بالكامل!");
+    }
+    fetchMyDebts();
+    fetchSummary();
+  };
+
+  const handleDeleteMyDebt = async (id: string) => {
+    await fetch(`/api/my-debts?id=${id}`, { method: "DELETE" });
+    fetchMyDebts();
+    fetchSummary();
   };
 
   const handlePayDebt = async (debtId: string, amount: number) => {
@@ -313,6 +375,7 @@ export default function DashboardPage() {
 
   const isDashboard = activeTab === "dashboard";
   const isDebts = activeTab === "debts";
+  const isMyDebts = activeTab === "myDebts";
 
   if (sellItem) {
     return (
@@ -375,6 +438,22 @@ export default function DashboardPage() {
         <div className="flex-1 overflow-y-auto pb-3 pt-3">
           <DebtList items={debts} onPay={handlePayDebt} onDelete={handleDelete} />
         </div>
+      ) : isMyDebts ? (
+        <>
+          <div className="px-3 md:px-8 pt-3 pb-2 shrink-0">
+            <button
+              onClick={() => setIsMyDebtModalOpen(true)}
+              className="btn btn-warning w-100 d-flex align-items-center justify-content-center gap-2 font-tajawal font-bold"
+              style={{ padding: "10px 0", fontSize: "15px" }}
+            >
+              <PlusIcon />
+              إضافة دين
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto pb-3 pt-1">
+            <MyDebtList items={myDebts} onPay={handlePayMyDebt} onDelete={handleDeleteMyDebt} />
+          </div>
+        </>
       ) : (
         <>
           <div className="px-3 md:px-8 pt-3 pb-2 shrink-0">
@@ -424,13 +503,20 @@ export default function DashboardPage() {
 
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {!isDashboard && !isDebts && (
+      {!isDashboard && !isDebts && !isMyDebts && (
         <AddModal
           type={modalType}
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSave={handleAdd}
           onSelectProduct={(item) => { setIsModalOpen(false); setSellItem(item); }}
+        />
+      )}
+
+      {isMyDebtModalOpen && (
+        <MyDebtModal
+          onClose={() => setIsMyDebtModalOpen(false)}
+          onSave={(data) => { handleAddMyDebt(data); setIsMyDebtModalOpen(false); }}
         />
       )}
     </div>

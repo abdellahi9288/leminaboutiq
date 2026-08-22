@@ -14,7 +14,7 @@ declare global {
 }
 
 type FilterType = "today" | "week" | "month" | "custom";
-type TabType = "dashboard" | "income" | "expenses" | "inventory" | "debts";
+type TabType = "dashboard" | "income" | "expenses" | "inventory" | "debts" | "myDebts";
 
 interface TopBarProps {
   userName: string;
@@ -126,7 +126,7 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
     URL.revokeObjectURL(url);
   };
 
-  const sectionTitle = activeTab === "dashboard" ? "لوحة التحكم" : activeTab === "income" ? "الدخل" : activeTab === "expenses" ? "المصاريف" : activeTab === "debts" ? "الديون" : "المخزون";
+  const sectionTitle = activeTab === "dashboard" ? "لوحة التحكم" : activeTab === "income" ? "الدخل" : activeTab === "expenses" ? "المصاريف" : activeTab === "debts" ? "الديون" : activeTab === "myDebts" ? "ديوني" : "المخزون";
 
   return (
     <div

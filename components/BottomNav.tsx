@@ -1,8 +1,8 @@
 "use client";
 
-import { IncomeIcon, ExpenseIcon, InventoryIcon, DashboardIcon, DebtIcon } from "./Icons";
+import { IncomeIcon, ExpenseIcon, InventoryIcon, DashboardIcon, DebtIcon, MyDebtIcon } from "./Icons";
 
-type TabType = "dashboard" | "income" | "expenses" | "inventory" | "debts";
+type TabType = "dashboard" | "income" | "expenses" | "inventory" | "debts" | "myDebts";
 
 interface BottomNavProps {
   activeTab: TabType;
@@ -15,6 +15,7 @@ const tabs: { key: TabType; label: string; Icon: typeof IncomeIcon }[] = [
   { key: "expenses", label: "المصاريف", Icon: ExpenseIcon },
   { key: "inventory", label: "المخزون", Icon: InventoryIcon },
   { key: "debts", label: "الديون", Icon: DebtIcon },
+  { key: "myDebts", label: "ديوني", Icon: MyDebtIcon },
 ];
 
 export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
