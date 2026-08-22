@@ -17,13 +17,13 @@ const tajawal = Tajawal({
 });
 
 export const metadata: Metadata = {
-  title: "Lemina Boutiq - إدارة المتجر",
+  title: "حساباتي - 7sabaty",
   description: "نظام إدارة المتجر - الدخل والمصاريف والمخزون",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Lemina Boutiq",
+    title: "حساباتي",
   },
   other: {
     "mobile-web-app-capable": "yes",
