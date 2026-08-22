@@ -392,7 +392,7 @@ export default function DashboardPage() {
     <div className="h-full w-full flex flex-col" style={{ background: "var(--sand)" }}>
       <TopBar
         userName={user?.name || ""}
-        storeName={user?.storeName || "LEMINA BOUTIQ"}
+        storeName={user?.storeName || "حساباتي"}
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
         onCustomDateChange={(from, to) => { setCustomFrom(from); setCustomTo(to); }}

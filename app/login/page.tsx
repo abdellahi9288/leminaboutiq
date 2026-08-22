@@ -119,7 +119,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-[11px] mt-6" style={{ color: "var(--text-faint)" }}>
-          خدمة إدارة المتجر — Lemina Boutiq
+          خدمة إدارة المتجر — حساباتي
         </p>
       </div>
     </div>
