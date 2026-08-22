@@ -118,9 +118,14 @@ export default function LoginPage() {
         </form>
 
         {/* Footer */}
-        <p className="text-center text-[11px] mt-6" style={{ color: "var(--text-faint)" }}>
-          خدمة إدارة المتجر — حساباتي
-        </p>
+        <div className="text-center mt-6 space-y-1">
+          <p className="text-[11px]" style={{ color: "var(--text-faint)" }}>
+            Developed with <span style={{ color: "#dc2626" }}>&#10084;</span> by <span className="font-bold">NetIT</span>
+          </p>
+          <p className="text-[11px] nums" dir="ltr" style={{ color: "var(--text-faint)" }}>
+            +222 36271730 &nbsp; +222 36797986
+          </p>
+        </div>
       </div>
     </div>
   );
