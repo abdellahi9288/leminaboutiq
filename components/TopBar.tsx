@@ -271,10 +271,19 @@ export default function TopBar({ userName, storeName, activeFilter, onFilterChan
       {/* Desktop: original layout */}
       <div className="hidden md:block">
         <div className="flex items-center justify-between px-8 pt-2 pb-1 relative z-10">
-          <div className="flex items-center gap-1 shrink-0">
-            <button onClick={handleExport} className="btn btn-light border-0 p-1" style={{ color: "var(--text-muted)" }}><DownloadIcon /></button>
-            <button onClick={() => { setShowPassword(true); setPwdError(""); setPwdSuccess(""); }} className="btn btn-light border-0 p-1" style={{ color: "var(--text-muted)" }}><SettingsIcon /></button>
-            <button onClick={handleLogout} className="btn btn-light border-0 p-1" style={{ color: "var(--text-muted)" }}><LogoutIcon /></button>
+          <div className="flex items-center gap-3 shrink-0">
+            <button onClick={handleExport} className="btn btn-light border-0 d-flex flex-column align-items-center gap-0.5 px-2 py-1" style={{ color: "var(--green-deep)" }}>
+              <DownloadIcon />
+              <span className="text-[10px] font-tajawal font-bold">تحميل</span>
+            </button>
+            <button onClick={() => { setShowPassword(true); setPwdError(""); setPwdSuccess(""); }} className="btn btn-light border-0 d-flex flex-column align-items-center gap-0.5 px-2 py-1" style={{ color: "var(--green-deep)" }}>
+              <SettingsIcon />
+              <span className="text-[10px] font-tajawal font-bold">إعدادات</span>
+            </button>
+            <button onClick={handleLogout} className="btn btn-light border-0 d-flex flex-column align-items-center gap-0.5 px-2 py-1" style={{ color: "#dc3545" }}>
+              <LogoutIcon />
+              <span className="text-[10px] font-tajawal font-bold">خروج</span>
+            </button>
           </div>
           <span className="text-[10px] font-bold tracking-[0.12em] uppercase" style={{ color: "var(--gold)" }}>{storeName}</span>
         </div>
